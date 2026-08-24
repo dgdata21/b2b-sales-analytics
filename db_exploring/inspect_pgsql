@@ -1,1 +1,51 @@
+import os
+import pandas as pd
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from datetime import datetime
 
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", 1000)
+
+start_time = datetime.now()
+
+load_dotenv(r"D:\code\data_science\data\.creds")
+host = os.getenv("DB_HOST")
+port = os.getenv("DB_PORT")
+base = os.getenv("DB_NAME")
+user = os.getenv("DB_USER")
+pswd = os.getenv("DB_PASS")
+
+url = f"postgresql+psycopg://{user}:{pswd}@{host}:{port}/{base}"
+engine = create_engine(url)
+
+inspect_pgsql = """
+    SELECT table_schema AS schema, 
+           table_name AS table, 
+           table_type AS type
+    FROM information_schema.tables
+--    WHERE table_schema IN ('public')
+    WHERE table_name ILIKE ('air%')
+    ORDER BY table_name
+"""
+print("\n", "EXPLORING PGSQL DATABASE".center(100, "*"), "\n")
+
+with engine.connect() as conn:
+    tables = pd.read_sql(text(inspect_pgsql), conn)
+
+print(tables.to_string(index=False))
+
+
+def table_view(table, schema="public"):
+    query = f"""SELECT * FROM {schema}.{table} LIMIT 5"""
+    with engine.connect() as conn:
+        _table = pd.read_sql(text(query), conn)
+    print("\n", f" {table} ".center(80, "="))
+    print("\n", _table.to_string(index=False))
+    print()
+    print(_table.info())
+
+
+table_view("air_efficiency")
+table_view("air_partners")
+print()
