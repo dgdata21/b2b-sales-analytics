@@ -24,7 +24,6 @@ inspect_pgsql = """
            table_name AS table, 
            table_type AS type
     FROM information_schema.tables
---    WHERE table_schema IN ('public')
     WHERE table_name ILIKE ('air%')
     ORDER BY table_name
 """
