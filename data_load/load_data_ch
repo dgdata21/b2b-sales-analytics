@@ -17,7 +17,7 @@ from queries import query_clickhouse
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 1000)
 
-PARQUET_PATH = r"D:/code/data_science/data/raw_files/parquet_dataset_ch"
+PARQUET_PATH = r"/to/path/parquet_dataset_ch"
 
 
 # ==================================================
@@ -116,7 +116,7 @@ def main():
     # LOAD CREDENTIALS
     # ==================================================
 
-    load_dotenv(r"D:\code\data_science\data\.creds")
+    load_dotenv(r"/path/to/.creds")
 
     host = os.getenv("cl_host")
     port = os.getenv("cl_port")
