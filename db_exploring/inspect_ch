@@ -1,1 +1,54 @@
+import pandas as pd
+import os
+from dotenv import load_dotenv
+import clickhouse_connect as chc
+from datetime import datetime
 
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", 1000)
+
+start_time = datetime.now()
+
+load_dotenv(r"D:\code\data_science\data\.creds")
+
+host = os.getenv("cl_host")
+port = os.getenv("cl_port")
+base = os.getenv("cl_base")
+user = os.getenv("cl_user")
+pasw = os.getenv("cl_pass")
+
+client = chc.get_client(
+    host=host, port=port, database=base, username=user, password=pasw
+)
+
+inspect_clickhouse = """
+SELECT database,
+       name AS table,
+       engine
+FROM system.tables
+WHERE database IN ('analytics')
+ORDER BY database, name
+"""
+
+print("\n", "EXPLORING CLICKHOUSE DATABASE".center(100, "*"), "\n")
+
+tables = client.query_df(inspect_clickhouse)
+
+print(tables.to_string(index=False))
+
+
+def table_view(client, table, data_base="analytics"):
+    query = f"""SELECT * FROM {data_base}.{table} LIMIT 5"""
+    df = client.query_df(query)
+    print("\n", f" {table} ".center(80, "="))
+    print("\n", df.to_string(index=False))
+    print()
+    print(df.info())
+
+
+table_view(client, "sales")
+table_view(client, "partners")
+
+end_time = datetime.now()
+# print("\n", f"Script time: {end_time - start_time}")
+print()
