@@ -1,0 +1,170 @@
+import os
+import uuid
+import shutil
+import gc
+from datetime import datetime
+
+import duckdb
+import pandas as pd
+import pyarrow as pa
+import pyarrow.compute as pc
+import pyarrow.dataset as ds
+import clickhouse_connect as chc
+from dotenv import load_dotenv
+
+from queries import query_clickhouse
+
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", 1000)
+
+PARQUET_PATH = r"D:/code/data_science/data/raw_files/parquet_dataset_ch"
+
+
+# ==================================================
+# STREAM CLICKHOUSE TO PARQUET
+# ==================================================
+def stream_clickhouse_to_parquet(
+    client, query: str, path: str, wipe_existing: bool = True
+) -> int:
+
+    if wipe_existing and os.path.exists(path):
+        print(f"Deleting files: {path}")
+        shutil.rmtree(path)
+
+    os.makedirs(path, exist_ok=True)
+
+    print("Streaming data from ClickHouse (Arrow)...")
+
+    chunk_idx = 0
+    total_rows = 0
+
+    with client.query_arrow_stream(query) as stream:
+        for batch in stream:
+
+            if batch.num_rows == 0:
+                continue
+
+            year_col = pc.cast(
+                pc.fill_null(batch.column("extract_year"), 1970), pa.int16()
+            )
+            month_col = pc.cast(
+                pc.fill_null(batch.column("extract_month"), 1), pa.int8()
+            )
+
+            keep_names = [
+                col
+                for col in batch.schema.names
+                if col not in ("extract_year", "extract_month")
+            ]
+
+            table = pa.Table.from_batches([batch]).select(keep_names)
+            table = table.append_column("year", year_col)
+            table = table.append_column("month", month_col)
+
+            ds.write_dataset(
+                table,
+                base_dir=path,
+                format="parquet",
+                partitioning=["year", "month"],
+                existing_data_behavior="overwrite_or_ignore",
+                basename_template=(
+                    f"part-{chunk_idx}-{uuid.uuid4().hex}-{{i}}.parquet"
+                ),
+            )
+
+            chunk_idx += 1
+            total_rows += table.num_rows
+
+            del table, batch
+
+            if chunk_idx % 20 == 0:
+                gc.collect()
+
+            print(f"Downloaded: {total_rows:,} rows...")
+
+    return total_rows
+
+
+# ==================================================
+# CHECK PARQUET DATASET
+# ==================================================
+def check_parquet(path: str):
+
+    with duckdb.connect() as con:
+        check = con.execute(f"""
+            SELECT
+                COUNT(*) AS rows,
+                SUM(revenue / 1000000.0) AS revenue_mln
+            FROM read_parquet(
+                '{path}/**/*.parquet',
+                hive_partitioning=1
+            )
+        """).df()
+
+    print("\nChecking Parquet dataset with DuckDB:")
+    print(check)
+
+
+# ==================================================
+# MAIN
+# ==================================================
+def main():
+
+    start_time = datetime.now()
+
+    # ==================================================
+    # LOAD CREDENTIALS
+    # ==================================================
+
+    load_dotenv(r"D:\code\data_science\data\.creds")
+
+    host = os.getenv("cl_host")
+    port = os.getenv("cl_port")
+    database = os.getenv("cl_base")
+    user = os.getenv("cl_user")
+    password = os.getenv("cl_pass")
+
+    if not all([host, port, database, user, password]):
+        raise ValueError("Can't load ClickHouse connection credentials")
+
+    port = int(port)
+
+    # ==================================================
+    # CLICKHOUSE CONNECTION
+    # ==================================================
+
+    client = chc.get_client(
+        host=host,
+        port=port,
+        database=database,
+        username=user,
+        password=password,
+        settings={"max_block_size": 300_000},
+    )
+
+    # ==================================================
+    # DOWNLOAD CLICKHOUSE TO PARQUET
+    # ==================================================
+    total_rows = stream_clickhouse_to_parquet(
+        client, query_clickhouse, PARQUET_PATH
+    )
+
+    print(f"\nDownloaded rows: {total_rows:,}")
+
+    # ==================================================
+    # CHECK PARQUET DATASET
+    # ==================================================
+    check_parquet(PARQUET_PATH)
+
+    # ==================================================
+    # EXECUTION TIME
+    # ==================================================
+    client.close()
+
+    print(f"\nScript time: {datetime.now() - start_time}")
+    print()
+
+
+if __name__ == "__main__":
+    main()
+print()
