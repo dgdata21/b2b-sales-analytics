@@ -1,0 +1,171 @@
+import os
+import gc
+import uuid
+import shutil
+from datetime import datetime
+
+import duckdb
+import pandas as pd
+import pyarrow as pa
+import pyarrow.dataset as ds
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+
+from queries import query_pgsql
+
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", 1000)
+
+PARQUET_PATH = r"D:/code/data_science/data/raw_files/parquet_dataset_pg"
+
+
+# ==================================================
+# STREAM POSTGRESQL TO PARQUET
+# ==================================================
+def stream_postgresql_to_parquet(
+    engine,
+    query: str,
+    path: str,
+    wipe_existing: bool = True,
+    chunksize: int = 300_000,
+) -> int:
+
+    if wipe_existing and os.path.exists(path):
+        print(f"Deleting files: {path}")
+        shutil.rmtree(path)
+
+    os.makedirs(path, exist_ok=True)
+
+    print("Streaming data from PostgreSQL...")
+
+    chunk_idx = 0
+    total_rows = 0
+    total_bad_date_rows = 0
+
+    with engine.connect().execution_options(stream_results=True) as conn:
+        chunks = pd.read_sql(text(query), conn, chunksize=chunksize)
+
+        for chunk in chunks:
+            if chunk.empty:
+                continue
+
+            bad_mask = (
+                chunk["extract_year"].isna() | chunk["extract_month"].isna()
+            )
+
+            bad_count = int(bad_mask.sum())
+
+            if bad_count:
+                total_bad_date_rows += bad_count
+
+            chunk["year"] = chunk["extract_year"].fillna(1970).astype("int16")
+
+            chunk["month"] = chunk["extract_month"].fillna(1).astype("int8")
+
+            chunk = chunk.drop(columns=["extract_year", "extract_month"])
+
+            table = pa.Table.from_pandas(chunk, preserve_index=False)
+
+            ds.write_dataset(
+                table,
+                base_dir=path,
+                format="parquet",
+                partitioning=["year", "month"],
+                existing_data_behavior="overwrite_or_ignore",
+                basename_template=(
+                    f"part-{chunk_idx}-{uuid.uuid4().hex}-{{i}}.parquet"
+                ),
+            )
+
+            chunk_idx += 1
+            total_rows += len(chunk)
+
+            del table, chunk
+
+            if chunk_idx % 20 == 0:
+                gc.collect()
+
+            print(f"Downloaded rows: {total_rows:,}...")
+
+    if total_bad_date_rows:
+        print(f"\nRows with empty date: " f"{total_bad_date_rows:,}")
+
+    return total_rows
+
+
+# ==================================================
+# CHECK PARQUET DATASET
+# ==================================================
+def check_parquet(path: str):
+
+    with duckdb.connect() as con:
+        check = con.execute(f"""
+            SELECT
+                COUNT(*) AS rows,
+                SUM(revenue / 1000000.0) AS revenue_mln
+            FROM read_parquet(
+                '{path}/**/*.parquet',
+                hive_partitioning=1
+            )
+        """).df()
+
+    print("\nChecking Parquet dataset with DuckDB:")
+    print(check)
+
+
+# ==================================================
+# MAIN
+# ==================================================
+def main():
+
+    start_time = datetime.now()
+
+    # ==================================================
+    # LOAD CREDENTIALS
+    # ==================================================
+    load_dotenv(r"D:\code\data_science\data\.creds")
+
+    host = os.getenv("DB_HOST")
+    port = os.getenv("DB_PORT")
+    database = os.getenv("DB_NAME")
+    user = os.getenv("DB_USER")
+    password = os.getenv("DB_PASS")
+
+    if not all([host, port, database, user, password]):
+        raise ValueError("Can't load PostgreSQL connection credentials")
+
+    port = int(port)
+
+    # ==================================================
+    # POSTGRESQL CONNECTION
+    # ==================================================
+    url = f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+
+    engine = create_engine(url)
+
+    # ==================================================
+    # DOWNLOAD POSTGRESQL TO PARQUET
+    # ==================================================
+    total_rows = stream_postgresql_to_parquet(
+        engine, query_pgsql, PARQUET_PATH
+    )
+
+    print(f"\nDownloaded rows: {total_rows:,}")
+
+    # ==================================================
+    # CHECK PARQUET DATASET
+    # ==================================================
+    check_parquet(PARQUET_PATH)
+
+    engine.dispose()
+
+    # ==================================================
+    # EXECUTION TIME
+    # ==================================================
+    print(f"\nScript time: {datetime.now() - start_time}")
+
+
+print()
+if __name__ == "__main__":
+    main()
+print()
