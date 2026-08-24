@@ -1,2 +1,3 @@
 if __name__ == "__main__":
-    import db_exploring
+    import inspect_ch
+    import inspect_pgsql
