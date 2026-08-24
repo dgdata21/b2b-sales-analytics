@@ -1,2 +1,2 @@
-from db_exploring.inspect_ch import *
-from db_exploring.inspect_pgsql import *
+from inspect_ch import *
+from inspect_pgsql import *
