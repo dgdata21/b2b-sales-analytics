@@ -37,7 +37,7 @@ def main():
     # LOAD CREDENTIALS
     # ==================================================
 
-    load_dotenv(r"D:\code\data_science\data\.creds")
+    load_dotenv(r"/path/to/.creds")
 
     host = os.getenv("cl_host")
     port = os.getenv("cl_port")
