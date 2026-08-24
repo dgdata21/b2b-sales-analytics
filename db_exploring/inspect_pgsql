@@ -96,5 +96,6 @@ table_view("air_partners")
 end_time = datetime.now()
 
 print(f"\nScript time: {end_time - start_time}")
+print()
 
 engine.dispose()
