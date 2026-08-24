@@ -9,7 +9,10 @@ pd.set_option("display.width", 1000)
 
 start_time = datetime.now()
 
-load_dotenv(<path>/.creds)
+# ==================================================
+# LOAD CREDENTIALS
+# ==================================================
+load_dotenv(r"/path/to/.creds")
 
 host = os.getenv("cl_host")
 port = os.getenv("cl_port")
@@ -17,16 +20,28 @@ base = os.getenv("cl_base")
 user = os.getenv("cl_user")
 pasw = os.getenv("cl_pass")
 
+if not all([host, port, base, user, pasw]):
+    raise ValueError("Can't load connection creds ClickHouse")
+
+port = int(port)
+
+# ==================================================
+# CLICKHOUSE CONNECTION
+# ==================================================
+
 client = chc.get_client(
     host=host, port=port, database=base, username=user, password=pasw
 )
 
+# ==================================================
+# EXPLORE DATABASE
+# ==================================================
 inspect_clickhouse = """
 SELECT database,
-       name AS table,
+       name AS table_name,
        engine
 FROM system.tables
-WHERE database IN ('analytics')
+WHERE database NOT IN ('system', 'information_schema', 'INFORMATION_SCHEMA')
 ORDER BY database, name
 """
 
@@ -36,19 +51,29 @@ tables = client.query_df(inspect_clickhouse)
 
 print(tables.to_string(index=False))
 
-
-def table_view(client, table, data_base="analytics"):
-    query = f"""SELECT * FROM {data_base}.{table} LIMIT 5"""
+# ==================================================
+# TABLE PREVIEW
+# ==================================================
+def table_view(client, table_name, database="analytics"):
+    query = f"""SELECT * FROM {database}.{table_name} LIMIT 5"""
     df = client.query_df(query)
-    print("\n", f" {table} ".center(80, "="))
-    print("\n", df.to_string(index=False))
+    print("\n", f" {database}.{table_name} ".center(80, "="))
+    if df.empty:
+        print("Empty table")
+    else:
+        print(df.to_string(index=False))
     print()
-    print(df.info())
+    df.info()
 
-
+# ==================================================
+# TABLE INSPECTION
+# ==================================================
 table_view(client, "sales")
 table_view(client, "partners")
 
+# ==================================================
+# EXECUTION TIME
+# ==================================================
 end_time = datetime.now()
-# print("\n", f"Script time: {end_time - start_time}")
+print("\n", f"Script time: {end_time - start_time}")
 print()
