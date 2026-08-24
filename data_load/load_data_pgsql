@@ -16,7 +16,7 @@ from queries import query_pgsql
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 1000)
 
-PARQUET_PATH = r"D:/code/data_science/data/raw_files/parquet_dataset_pg"
+PARQUET_PATH = r"/to/path/parquet_dataset_pg"
 
 
 # ==================================================
@@ -123,7 +123,7 @@ def main():
     # ==================================================
     # LOAD CREDENTIALS
     # ==================================================
-    load_dotenv(r"D:\code\data_science\data\.creds")
+    load_dotenv(r"/path/to/.creds")
 
     host = os.getenv("DB_HOST")
     port = os.getenv("DB_PORT")
