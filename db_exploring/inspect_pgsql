@@ -9,42 +9,92 @@ pd.set_option("display.width", 1000)
 
 start_time = datetime.now()
 
-load_dotenv(r"D:\code\data_science\data\.creds")
+# ==================================================
+# LOAD CREDENTIALS
+# ==================================================
+load_dotenv(r"/path/to/.creds")
+
 host = os.getenv("DB_HOST")
 port = os.getenv("DB_PORT")
-base = os.getenv("DB_NAME")
+database = os.getenv("DB_NAME")
 user = os.getenv("DB_USER")
-pswd = os.getenv("DB_PASS")
+password = os.getenv("DB_PASS")
 
-url = f"postgresql+psycopg://{user}:{pswd}@{host}:{port}/{base}"
+if not all([host, port, database, user, password]):
+    raise ValueError("Can't load PostgreSQL connection credentials")
+
+port = int(port)
+
+# ==================================================
+# POSTGRESQL CONNECTION
+# ==================================================
+
+url = f"postgresql+psycopg://{user}:{password}" f"@{host}:{port}/{database}"
+
 engine = create_engine(url)
 
-inspect_pgsql = """
-    SELECT table_schema AS schema, 
-           table_name AS table, 
-           table_type AS type
-    FROM information_schema.tables
-    WHERE table_name ILIKE ('air%')
-    ORDER BY table_name
+# ==================================================
+# EXPLORE DATABASE
+# ==================================================
+
+inspect_postgresql = """
+SELECT
+    table_schema AS schema,
+    table_name,
+    table_type
+FROM information_schema.tables
+WHERE table_schema NOT IN (
+    'information_schema',
+    'pg_catalog'
+)
+ORDER BY table_schema, table_name
 """
-print("\n", "EXPLORING PGSQL DATABASE".center(100, "*"), "\n")
+
+print("\n", "EXPLORING POSTGRESQL DATABASE".center(100, "*"), "\n")
 
 with engine.connect() as conn:
-    tables = pd.read_sql(text(inspect_pgsql), conn)
+    tables = pd.read_sql(text(inspect_postgresql), conn)
 
 print(tables.to_string(index=False))
 
 
-def table_view(table, schema="public"):
-    query = f"""SELECT * FROM {schema}.{table} LIMIT 5"""
+# ==================================================
+# TABLE PREVIEW
+# ==================================================
+def table_view(table_name, schema="public", limit=5):
+
+    query = f"""
+    SELECT *
+    FROM {schema}.{table_name}
+    LIMIT {limit}
+    """
+
     with engine.connect() as conn:
-        _table = pd.read_sql(text(query), conn)
-    print("\n", f" {table} ".center(80, "="))
-    print("\n", _table.to_string(index=False))
+        df = pd.read_sql(text(query), conn)
+
+    print("\n", f" {schema}.{table_name} ".center(80, "="))
+
+    if df.empty:
+        print("\nEmpty table")
+    else:
+        print("\n", df.to_string(index=False))
+
     print()
-    print(_table.info())
+    df.info()
 
 
+# ==================================================
+# TABLE INSPECTION
+# ==================================================
 table_view("air_efficiency")
 table_view("air_partners")
-print()
+
+# ==================================================
+# EXECUTION TIME
+# ==================================================
+
+end_time = datetime.now()
+
+print(f"\nScript time: {end_time - start_time}")
+
+engine.dispose()
