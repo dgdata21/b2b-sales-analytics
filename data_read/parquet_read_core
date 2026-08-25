@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 # ==================================================
 # SETTINGS
 # ==================================================
-load_dotenv(r"D:/code/data_science/data/.creds")
+load_dotenv(r"/path/to/.creds")
 
 PARQUET_PATH = r"/path/to/parquet_dataset_ch"
 
