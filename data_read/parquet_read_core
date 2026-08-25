@@ -1,0 +1,98 @@
+import os
+import hmac
+import hashlib
+
+import duckdb
+import pandas as pd
+from dotenv import load_dotenv
+
+# ==================================================
+# SETTINGS
+# ==================================================
+load_dotenv(r"D:/code/data_science/data/.creds")
+
+PARQUET_PATH = r"D:/code/data_science/data/raw_files/parquet_dataset_ch"
+
+SALT = os.getenv("SALT")
+if not SALT:
+    raise ValueError("Can't load SALT")
+
+TEXT_COLS = [
+    "manager_id",
+    "customer_id",
+    "segment",
+    "sale_cat",
+    "order_id",
+    "sku_id",
+]
+
+DATE_COLS = ["date", "period"]
+
+
+# ==================================================
+# DATAFRAME EXPLORATION
+# ==================================================
+def get_sample(
+    n_rows: int = 100,
+    path: str = PARQUET_PATH,
+    columns: list[str] | None = None,
+) -> pd.DataFrame:
+    cols_sql = ", ".join(columns) if columns else "*"
+    with duckdb.connect() as con:
+        df = con.execute(f"""
+            SELECT {cols_sql}
+            FROM read_parquet('{path}/**/*.parquet', hive_partitioning=1)
+            USING SAMPLE {n_rows} ROWS
+        """).df()
+    return df
+
+
+# ==================================================
+# SAMPLE DOWNLOAD
+# ==================================================
+def load_columns(
+    columns: list[str],
+    path: str = PARQUET_PATH,
+    where: str | None = None,
+    limit: int | None = None,
+) -> pd.DataFrame:
+    cols_sql = ", ".join(columns)
+    query = f"""
+        SELECT {cols_sql}
+        FROM read_parquet('{path}/**/*.parquet', hive_partitioning=1)
+    """
+    if where:
+        query += f" WHERE {where}"
+    if limit is not None:
+        query += f" LIMIT {limit}"
+    with duckdb.connect() as con:
+        df = con.execute(query).df()
+    return df
+
+
+# ==================================================
+# DATA TYPES TRANSFORMATION
+# ==================================================
+def cats_process(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    for col in TEXT_COLS:
+        if col in df.columns:
+            df[col] = pd.Categorical(df[col])
+    for col in DATE_COLS:
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col])
+    if "date" in df.columns:
+        df = df.sort_values("date").reset_index(drop=True)
+    return df
+
+
+# ==================================================
+# ANONYMIZATION
+# ==================================================
+def anon_id(original_id: str, salt: str, length: int = 24) -> str:
+    digest = hmac.new(
+        key=salt.encode(),
+        msg=str(original_id).encode(),
+        digestmod=hashlib.sha256,
+    ).hexdigest()
+    return digest[:length]
