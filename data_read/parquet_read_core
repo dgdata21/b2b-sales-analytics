@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # ==================================================
 load_dotenv(r"D:/code/data_science/data/.creds")
 
-PARQUET_PATH = r"D:/code/data_science/data/raw_files/parquet_dataset_ch"
+PARQUET_PATH = r"/path/to/parquet_dataset_ch"
 
 SALT = os.getenv("SALT")
 if not SALT:
