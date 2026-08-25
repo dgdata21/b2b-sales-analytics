@@ -3,9 +3,7 @@ SELECT toYear(ans.date)                   AS extract_year
      , toMonth(ans.date)                  AS extract_month
      , toString(ans.date)                 AS date
      , toString(toStartOfMonth(ans.date)) AS period
-     , ans.agent                          AS manager
      , ans.agent_link                     AS manager_id
-     , anp.contractor                     AS customer
      , anp.kag_link                       AS customer_id
      , toString(ans.record_id)            AS order_id
      , ans.product_folder                 AS sku
@@ -27,9 +25,7 @@ GROUP BY extract_year,
          extract_month,
          date,
          period,
-         manager,
          manager_id,
-         customer,
          customer_id,
          order_id,
          sku,
@@ -43,9 +39,7 @@ SELECT EXTRACT(YEAR FROM ae.date)::int    AS extract_year
      , EXTRACT(MONTH FROM ae.date)::int   AS extract_month
      , ae.date                            AS date
      , DATE_TRUNC('month', ae.date)::date AS period
-     , ae.agent                           AS manager
      , ae.agent_link                      AS manager_id
-     , ap.contractor                      AS customer
      , ap.kag_link                        AS customer_id
      , ae.record_id                       AS order_id
      , ae.product_folder                  AS sku
@@ -66,9 +60,7 @@ GROUP BY extract_year,
          extract_month,
          date,
          period,
-         manager,
          manager_id,
-         customer, 
          customer_id, 
          order_id, 
          sku, 
