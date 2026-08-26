@@ -6,7 +6,7 @@ from parquet_read_01 import anonymize
 # ==================================================
 # SETTINGS
 # ==================================================
-OUTPUT_PATH = r"/path_to_save/final.parquet"
+OUTPUT_PATH = r"/path_to_save/final_raw.parquet"
 
 CHOSEN_COLS = [
     "period",
