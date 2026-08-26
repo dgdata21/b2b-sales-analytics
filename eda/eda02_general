@@ -1,0 +1,244 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from eda01_intro import print_section
+
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", 1000)
+
+PARQUET_PATH = r"D:/path/to/final_eda.parquet"
+
+DISTRIBUTION_COLS = ["revenue", "margin"]
+Z_SCORE_OUTLIER_THRESHOLD = 3
+# 0.6745 scales MAD so robust Z-score is comparable to a standard Z-score
+# on a normal distribution
+ROBUST_Z_SCALE = 0.6745
+
+
+def add_z_scores(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    """Добавляет обычный и робастный (через медиану/MAD) Z-score для cols.
+    Возвращает копию df."""
+    df = df.copy()
+    for col in cols:
+        mean = df[col].mean()
+        std = df[col].std()
+        df[f"{col}_zscore"] = (df[col] - mean) / std
+
+        median = df[col].median()
+        mad = (df[col] - median).abs().median()
+        df[f"{col}_robust_zscore"] = np.where(
+            mad != 0, ROBUST_Z_SCALE * (df[col] - median) / mad, 0
+        )
+    return df
+
+
+def main(verbose: bool = True):
+    eda_general = pd.read_parquet(PARQUET_PATH)
+    eda_clean = eda_general[eda_general["margin_category"] != "BONUS"].copy()
+    eda_clean["year"] = eda_clean["period"].dt.year
+    eda_clean["month"] = eda_clean["period"].dt.month
+
+    margin_category_stats = (
+        eda_general.groupby(by=["margin_category"], observed=True)
+        .agg(
+            {
+                "revenue": ["sum", "min", "max", "std", "mean", "median"],
+                "margin": ["sum", "min", "max", "std", "mean", "median"],
+                "margin_pct": ["min", "max", "std", "mean", "median"],
+            }
+        )
+        .reset_index()
+    )
+
+    monthly_no_bonus = (
+        eda_clean.groupby(by=["month"], observed=True)
+        .agg(
+            {
+                "revenue": ["sum", "min", "max", "std", "mean", "median"],
+                "margin": ["sum", "min", "max", "std", "mean", "median"],
+                "margin_pct": ["min", "max", "std", "mean", "median"],
+            }
+        )
+        .reset_index()
+    )
+
+    yoy_plot = (
+        eda_clean.groupby(by=["year", "month"], observed=True)
+        .agg(
+            revenue=("revenue", "sum"),
+            margin=("margin", "sum"),
+            margin_pct=("margin_pct", "median"),
+        )
+        .reset_index()
+    )
+
+    months_plot = (
+        eda_clean.groupby(by=["period"], observed=True)
+        .agg(
+            revenue=("revenue", "sum"),
+            margin=("margin", "sum"),
+            margin_pct=("margin_pct", "median"),
+        )
+        .reset_index()
+    )
+
+    if verbose:
+        print_section("GENERAL DATAFRAME EDA", width=140, char="/")
+        print_section("DATAFRAME HEAD")
+        print(eda_general.head().to_string(index=False))
+        print_section("DATAFRAME TAIL")
+        print(eda_general.tail().to_string(index=False))
+        print()
+        print_section("DATAFRAME INFO")
+        eda_general.info()
+        print()
+        print_section("GENERAL STATISTIC (margin category)", width=210)
+        print(margin_category_stats.to_string(index=False))
+        print()
+        print_section("MONTHLY STATISTIC (No BONUS)", width=200)
+        print(monthly_no_bonus.to_string(index=False))
+        print()
+
+    ######################################################
+    # DISTRIBUTION DIAGNOSTICS (NO BONUS)
+    ######################################################
+    distribution_shape = eda_clean[DISTRIBUTION_COLS].agg(["skew", "kurtosis"])
+    if verbose:
+        print_section("DISTRIBUTION SHAPE: SKEW & KURTOSIS (No BONUS)")
+        print(distribution_shape.to_string())
+        print()
+
+    eda_clean = add_z_scores(eda_clean, DISTRIBUTION_COLS)
+
+    if verbose:
+        print_section("OUTLIERS BY Z-SCORE VS ROBUST Z-SCORE (No BONUS)")
+        for col in DISTRIBUTION_COLS:
+            n_outliers_z = (
+                eda_clean[f"{col}_zscore"].abs() > Z_SCORE_OUTLIER_THRESHOLD
+            ).sum()
+            n_outliers_robust = (
+                eda_clean[f"{col}_robust_zscore"].abs()
+                > Z_SCORE_OUTLIER_THRESHOLD
+            ).sum()
+            print(
+                f"{col}: Z-score outliers = {n_outliers_z:,} | "
+                f"Robust Z-score outliers = {n_outliers_robust:,}"
+            )
+        print()
+
+    ######################################################
+    # VISUALIZATION
+    ######################################################
+    if verbose:
+        fig, ax = plt.subplots(1, len(DISTRIBUTION_COLS), figsize=(19, 10))
+        for i, col in enumerate(DISTRIBUTION_COLS):
+            sns.histplot(eda_clean[col], kde=True, ax=ax[i], color="#5D6D7E")
+            ax[i].set_title(
+                f"{col.capitalize()} Distribution (No BONUS)",
+                fontsize=14,
+                pad=15,
+            )
+        plt.tight_layout()
+        plt.show()
+
+        fig, ax = plt.subplots(3, 1, figsize=(19, 10))
+        sns.barplot(
+            data=yoy_plot,
+            x="month",
+            y="revenue",
+            ax=ax[0],
+            hue="year",
+            palette="viridis",
+        )
+        sns.barplot(
+            data=yoy_plot,
+            x="month",
+            y="margin",
+            ax=ax[1],
+            hue="year",
+            palette="viridis",
+        )
+        sns.barplot(
+            data=yoy_plot,
+            x="month",
+            y="margin_pct",
+            ax=ax[2],
+            hue="year",
+            palette="viridis",
+        )
+        ax[1].get_legend().remove()
+        ax[2].get_legend().remove()
+        ax[0].legend(loc="upper left", ncol=3)
+        ax[0].set_xlabel("")
+        ax[1].set_xlabel("")
+        year_list = " vs ".join(sorted(yoy_plot["year"].astype(str).unique()))
+        ax[0].set_title(
+            f"YoY: revenue by year\n{year_list}", fontsize=14, pad=15
+        )
+        ax[1].set_title(
+            f"YoY: margin by year\n{year_list}", fontsize=14, pad=15
+        )
+        ax[2].set_title(
+            f"YoY: margin_pct(median) by year\n{year_list}",
+            fontsize=14,
+            pad=15,
+        )
+
+        plt.tight_layout()
+        plt.show()
+
+        fig, ax = plt.subplots(3, 1, figsize=(19, 10))
+
+        quarter_index = pd.PeriodIndex(months_plot["period"], freq="Q")
+        quarterly = (
+            months_plot[["revenue", "margin", "margin_pct"]]
+            .groupby(quarter_index)
+            .agg({"revenue": "sum", "margin": "sum", "margin_pct": "median"})
+        )
+
+        sns.barplot(
+            data=quarterly,
+            x=quarterly.index.astype(str),
+            y="revenue",
+            ax=ax[0],
+            color="#5D6D7E",
+            linewidth=2.5,
+        )
+
+        sns.barplot(
+            data=quarterly,
+            x=quarterly.index.astype(str),
+            y="margin",
+            ax=ax[1],
+            color="#5D6D7E",
+            linewidth=2.5,
+        )
+
+        sns.barplot(
+            data=quarterly,
+            x=quarterly.index.astype(str),
+            y="margin_pct",
+            ax=ax[2],
+            color="#5D6D7E",
+            linewidth=2.5,
+        )
+
+        ax[0].set_xlabel("")
+        ax[1].set_xlabel("")
+
+        ax[0].set_title("Revenue Dynamic", fontsize=14, pad=15)
+        ax[1].set_title("Margin Dynamic", fontsize=14, pad=15)
+        ax[2].set_title("Margin_pct(median)", fontsize=14, pad=15)
+
+        plt.tight_layout()
+        plt.show()
+
+    return eda_general, eda_clean, months_plot
+
+
+if __name__ == "__main__":
+    main()
+
+print()
