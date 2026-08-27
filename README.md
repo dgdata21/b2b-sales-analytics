@@ -74,3 +74,10 @@ Fig. 1 — Year-over-year total revenue, total margin, and median margin %.
 
 ![Revenue by year](./04eda/Figure_2.png)
 Fig. 2 — Quarterly total revenue, total margin, and median margin %.
+
+How to Run
+bash
+git clone https://github.com/dgdata21/b2b-sales-analytics.git
+cd b2b-sales-analytics
+pip install -r requirements.txt
+jupyter notebook
