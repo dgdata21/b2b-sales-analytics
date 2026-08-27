@@ -69,11 +69,6 @@ Checked for duplicate records and missing values
 Anonymized sensitive fields (manager and client identifiers — see Data & Anonymization)
 Analyzed revenue, margin, and margin % trends at two levels of granularity:
 
-Show Image Fig. 1 — Year-over-year total revenue, total margin, and median margin %. [One sentence on the takeaway — e.g. "Revenue grew steadily through 2024, while margin % held relatively stable."]
+./eda/Figure_1.png Fig. 1 — Year-over-year total revenue, total margin, and median margin %. [One sentence on the takeaway — e.g. "Revenue grew steadily through 2024, while margin % held relatively stable."]
 
-Show Image Fig. 2 — Quarterly total revenue, total margin, and median margin %. [One sentence on the takeaway — e.g. "Q4 consistently shows the strongest revenue quarter, with margin % dipping slightly."]
-
-Key Findings
-[Finding 1 — e.g. "Total revenue grew by X% from 2021 to 2024, before [trend in 2025]."]
-[Finding 2 — e.g. "Median margin % has stayed within a Y–Z% range across the full period, showing pricing discipline despite revenue growth."]
-[Finding 3 — e.g. "Revenue is seasonal, with Q[N] consistently the strongest quarter each year."]
+./eda/Figure_2.png Fig. 2 — Quarterly total revenue, total margin, and median margin %. [One sentence on the takeaway — e.g. "Q4 consistently shows the strongest revenue quarter, with margin % dipping slightly."]
