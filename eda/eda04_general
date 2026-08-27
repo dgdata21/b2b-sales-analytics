@@ -15,10 +15,6 @@ MIN_ORDERS = 36
 
 
 def _run_bootstrap(values, metric, n_boot, confidence):
-    """Запускает BCa bootstrap. Если BCa падает — откатывается на percentile
-    и фиксирует это в флаге.
-    Возвращает: (ci_low, ci_high, method_used)
-    """
     try:
         result = bootstrap(
             (values,),
@@ -57,8 +53,6 @@ def _run_bootstrap(values, metric, n_boot, confidence):
 
 
 def bootstrap_by_period(df: pd.DataFrame) -> pd.DataFrame:
-    """BCa-бутстрап (с откатом на percentile) медианы margin и медианы revenue
-    по каждому period. Требует построчных данных (не предагрегированных)."""
     results = []
 
     for period, grp in df.groupby("period", observed=True):
@@ -105,7 +99,6 @@ def bootstrap_by_period(df: pd.DataFrame) -> pd.DataFrame:
         margin_med = np.median(margins)
         revenue_med = np.median(revenues)
 
-        # честная относительная ошибка: ширина CI своей же метрики к её медиане
         r_error = (
             (r_width / abs(revenue_med) * 100.0)
             if revenue_med != 0
@@ -170,9 +163,6 @@ def main(
     monthly_stats: pd.DataFrame | None = None,
     verbose: bool = True,
 ):
-    """Если eda_clean/monthly_stats не переданы (запуск файла отдельно) —
-    считает их сам через eda03_main(). Если переданы (вызов из оркестратора
-    вроде main.py) — использует их напрямую, без повторного пересчёта."""
     if eda_clean is None or monthly_stats is None:
         eda_clean, monthly_stats = eda03_main(verbose=False)
 
