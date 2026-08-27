@@ -49,7 +49,7 @@ def show_extreme_margins(
 
 
 def main() -> pd.DataFrame:
-    print_section("PRIMARY DATAFRAME STATISTIC", width=140, char="/")
+    print_section("PRIMARY DATAFRAME STATISTIC", char="/")
 
     # ==================================================
     # LOAD AND FILTER DATA
@@ -166,9 +166,9 @@ def main() -> pd.DataFrame:
     # ==================================================
     # SAVE EDA DATASET
     # ==================================================
-    df.to_parquet(
-        OUTPUT_PATH, engine="pyarrow", index=False, compression="brotli"
-    )
+    # df.to_parquet(
+    #     OUTPUT_PATH, engine="pyarrow", index=False, compression="brotli"
+    # )
 
     return df
 
@@ -177,3 +177,4 @@ if __name__ == "__main__":
     df = main()
 
 print()
+
