@@ -72,4 +72,5 @@ Analyzed revenue, margin, and margin % trends at two levels of granularity:
 ![Revenue by year](./04eda/Figure_1.png)
 Fig. 1 — Year-over-year total revenue, total margin, and median margin %. [One sentence on the takeaway — e.g. "Revenue grew steadily through 2024, while margin % held relatively stable."]
 
-./04eda/Figure_2.png Fig. 2 — Quarterly total revenue, total margin, and median margin %. [One sentence on the takeaway — e.g. "Q4 consistently shows the strongest revenue quarter, with margin % dipping slightly."]
+![Revenue by year](./04eda/Figure_2.png)
+Fig. 2 — Quarterly total revenue, total margin, and median margin %. [One sentence on the takeaway — e.g. "Q4 consistently shows the strongest revenue quarter, with margin % dipping slightly."]
