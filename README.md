@@ -49,7 +49,7 @@ Project Structure
 
 Explored the source database schema behind the company's 1C Enterprise system to identify the relevant tables, keys, and relationships needed for the analysis.
 
-02 — Data Extraction & Loading
+## 02 — Data Extraction & Loading
 
 📂 02data_load/
 
