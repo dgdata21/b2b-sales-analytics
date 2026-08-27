@@ -34,7 +34,7 @@ No client names, manager names, contact details, or other identifying fields are
 
 SKU-level detail was deliberately excluded — this analysis focuses on overall revenue and margin dynamics, not product mix.
 
-Project Structure
+## Project Structure
 ```
 ├── 01db_exploring/   # exploring the source schema, keys, table relationships
 ├── 02data_load/      # SQL extraction from the source DB, saved as Parquet
@@ -44,6 +44,7 @@ Project Structure
 ├── results.txt
 └── README.md
 ```
+## 01 — Database Exploration
 
 📂 01db_exploring/
 
@@ -55,13 +56,13 @@ Explored the source database schema behind the company's 1C Enterprise system to
 
 Extracted the relevant data via SQL and saved it locally in Parquet format for efficient, reproducible downstream processing.
 
-03 — Data Reading & Pre-Aggregation
+## 03 — Data Reading & Pre-Aggregation
 
 📂 03data_read/
 
 Read the Parquet files, performed initial aggregation, and saved the resulting dataset locally for the analysis stage.
 
-# 04 — Exploratory Data Analysis
+## 04 — Exploratory Data Analysis
 
 📂 04eda/ · eda01_intro
 
@@ -86,5 +87,5 @@ jupyter notebook
 
 - Revenue is relatively stable across 2021–2025 rather than showing strong linear growth, fluctuating in a ~110k–155k band per quarter — consistent with a mature, stable B2B revenue base.
 - Q4 is consistently the strongest quarter each year (2021, 2022, 2024), pointing to a clear seasonal pattern useful for planning.
-- Q2 2022 (specifically March–July) shows a sharp, one-off spike in both margin (~24.5k vs a typical 15–18k) and median margin % (~17.5% vs a ~13.5–14% baseline) — worth investigating as an isolated event rather than a trend, since 2023 returned to normal levels.
+- Q2 2022 (specifically March–July) shows a sharp, one-off spike in both margin (~24.5k vs a typical 15–18k) and median margin % (~17.5% vs a ~13.5–14% baseline). This coincides with a period of sharp market volatility in the broader economy; margins normalized back to baseline from 2023 onward, confirming it was a temporary market-driven effect rather than a structural shift.
 - Median margin % has drifted modestly upward in 2024–2025 (~14.5–15.5%) compared to 2021–2023 (~13.5%), suggesting a slight efficiency improvement despite flat revenue.
