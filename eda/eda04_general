@@ -1,0 +1,196 @@
+import numpy as np
+import pandas as pd
+from scipy.stats import bootstrap
+
+from eda01_intro import print_section
+from eda03_general import main as eda03_main
+
+pd.set_option("display.max_columns", None)
+pd.set_option("display.width", 1000)
+
+N_BOOT = 5000
+ALPHA = 0.05
+CONFIDENCE = 1 - ALPHA
+MIN_ORDERS = 36
+
+
+def _run_bootstrap(values, metric, n_boot, confidence):
+    """Запускает BCa bootstrap. Если BCa падает — откатывается на percentile
+    и фиксирует это в флаге.
+    Возвращает: (ci_low, ci_high, method_used)
+    """
+    try:
+        result = bootstrap(
+            (values,),
+            metric,
+            confidence_level=confidence,
+            n_resamples=n_boot,
+            method="BCa",
+            batch=100,
+            vectorized=False,
+        )
+        return (
+            result.confidence_interval.low,
+            result.confidence_interval.high,
+            "BCa",
+        )
+    except Exception:
+        pass  # BCa не смог — пробуем percentile
+
+    try:
+        result = bootstrap(
+            (values,),
+            metric,
+            confidence_level=confidence,
+            n_resamples=n_boot,
+            method="percentile",
+            batch=100,
+            vectorized=False,
+        )
+        return (
+            result.confidence_interval.low,
+            result.confidence_interval.high,
+            "percentile",
+        )
+    except Exception:
+        return (np.nan, np.nan, "failed")
+
+
+def bootstrap_by_period(df: pd.DataFrame) -> pd.DataFrame:
+    """BCa-бутстрап (с откатом на percentile) медианы margin и медианы revenue
+    по каждому period. Требует построчных данных (не предагрегированных)."""
+    results = []
+
+    for period, grp in df.groupby("period", observed=True):
+        margins = grp["margin"].values
+        revenues = grp["revenue"].values
+        n = len(margins)
+
+        if n < MIN_ORDERS:
+            results.append(
+                {
+                    "period": period,
+                    "n_orders": n,
+                    "margin_sum": np.sum(margins),
+                    "margin_mean": np.mean(margins),
+                    "margin_med": np.median(margins),
+                    "margin_ci_lo": np.nan,
+                    "margin_hi": np.nan,
+                    "margin_width": np.nan,
+                    "margin_error_pct": np.nan,
+                    "margin_quality": "insufficient",
+                    "revenue_sum": np.sum(revenues),
+                    "revenue_mean": np.mean(revenues),
+                    "revenue_med": np.median(revenues),
+                    "revenue_ci_lo": np.nan,
+                    "revenue_hi": np.nan,
+                    "revenue_width": np.nan,
+                    "rev_error_pct": np.nan,
+                    "rev_quality": "insufficient",
+                    "ci_method": "insufficient_data",
+                }
+            )
+            continue
+
+        m_lo, m_hi, m_method = _run_bootstrap(
+            margins, np.median, N_BOOT, CONFIDENCE
+        )
+        r_lo, r_hi, r_method = _run_bootstrap(
+            revenues, np.median, N_BOOT, CONFIDENCE
+        )
+
+        m_width = m_hi - m_lo if not np.isnan(m_hi) else np.nan
+        r_width = r_hi - r_lo if not np.isnan(r_hi) else np.nan
+
+        margin_med = np.median(margins)
+        revenue_med = np.median(revenues)
+
+        # честная относительная ошибка: ширина CI своей же метрики к её медиане
+        r_error = (
+            (r_width / abs(revenue_med) * 100.0)
+            if revenue_med != 0
+            else np.nan
+        )
+        m_error = (
+            (m_width / abs(margin_med) * 100.0) if margin_med != 0 else np.nan
+        )
+
+        if np.isnan(r_width) or np.isnan(r_error):
+            r_quality = "failed"
+        elif r_error < 5.0:
+            r_quality = "high"
+        elif r_error <= 15.0:
+            r_quality = "medium"
+        else:
+            r_quality = "low"
+
+        if np.isnan(m_width) or np.isnan(m_error):
+            m_quality = "failed"
+        elif m_error < 5.0:
+            m_quality = "high"
+        elif m_error <= 15.0:
+            m_quality = "medium"
+        else:
+            m_quality = "low"
+
+        results.append(
+            {
+                "period": period,
+                "n_orders": n,
+                "margin_sum": np.sum(margins),
+                "margin_mean": np.mean(margins),
+                "margin_med": margin_med,
+                "margin_ci_lo": m_lo,
+                "margin_hi": m_hi,
+                "margin_width": m_width,
+                "margin_error_pct": m_error,
+                "margin_quality": m_quality,
+                "revenue_sum": np.sum(revenues),
+                "revenue_mean": np.mean(revenues),
+                "revenue_med": revenue_med,
+                "revenue_ci_lo": r_lo,
+                "revenue_hi": r_hi,
+                "revenue_width": r_width,
+                "rev_error_pct": r_error,
+                "rev_quality": r_quality,
+                "ci_method": f"{m_method}/{r_method}",
+            }
+        )
+
+    return (
+        pd.DataFrame(results)
+        .sort_values("period", ascending=True)
+        .reset_index(drop=True)
+        .round(2)
+    )
+
+
+def main(
+    eda_clean: pd.DataFrame | None = None,
+    monthly_stats: pd.DataFrame | None = None,
+    verbose: bool = True,
+):
+    """Если eda_clean/monthly_stats не переданы (запуск файла отдельно) —
+    считает их сам через eda03_main(). Если переданы (вызов из оркестратора
+    вроде main.py) — использует их напрямую, без повторного пересчёта."""
+    if eda_clean is None or monthly_stats is None:
+        eda_clean, monthly_stats = eda03_main(verbose=False)
+
+    ######################################################
+    # BOOTSTRAP BCa CI BY PERIOD (revenue median, margin median)
+    ######################################################
+    period_bootstrap = bootstrap_by_period(eda_clean)
+
+    if verbose:
+        print_section(
+            f"BOOTSTRAP BCa {int(CONFIDENCE * 100)}% CI BY PERIOD (No BONUS)",
+            width=250,
+        )
+        print(period_bootstrap.to_string(index=False))
+        print()
+
+    return eda_clean, monthly_stats, period_bootstrap
+
+
+if __name__ == "__main__":
+    main()
