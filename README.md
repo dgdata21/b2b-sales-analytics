@@ -42,7 +42,6 @@ Project Structure
 │   └── eda01_intro     # duplicate/missing-value checks, anonymization of sensitive fields
 ├── results.txt
 └── README.md
-01 — Database Exploration
 
 📂 01_db_exploring/
 
