@@ -8,7 +8,7 @@ from eda01_intro import print_section
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 1000)
 
-PARQUET_PATH = r"D:/code/data_science/data/processed_files/final_eda.parquet"
+PARQUET_PATH = r"/path/to/final_eda.parquet"
 
 DISTRIBUTION_COLS = ["revenue", "margin"]
 Z_SCORE_OUTLIER_THRESHOLD = 3
@@ -18,8 +18,6 @@ ROBUST_Z_SCALE = 0.6745
 
 
 def add_z_scores(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
-    """Добавляет обычный и робастный (через медиану/MAD) Z-score для cols.
-    Возвращает копию df."""
     df = df.copy()
     for col in cols:
         mean = df[col].mean()
@@ -240,5 +238,4 @@ def main(verbose: bool = True):
 
 if __name__ == "__main__":
     main()
-
 print()
