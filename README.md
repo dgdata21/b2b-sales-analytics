@@ -75,9 +75,16 @@ Fig. 1 — Year-over-year total revenue, total margin, and median margin %.
 ![Revenue by year](./04eda/Figure_2.png)
 Fig. 2 — Quarterly total revenue, total margin, and median margin %.
 
-How to Run
+## How to Run
 bash
 git clone https://github.com/dgdata21/b2b-sales-analytics.git
 cd b2b-sales-analytics
 pip install -r requirements.txt
 jupyter notebook
+
+## Key Findings
+
+- Revenue is relatively stable across 2021–2025 rather than showing strong linear growth, fluctuating in a ~110k–155k band per quarter — consistent with a mature, stable B2B revenue base.
+- Q4 is consistently the strongest quarter each year (2021, 2022, 2024), pointing to a clear seasonal pattern useful for planning.
+- Q2 2022 (specifically March–July) shows a sharp, one-off spike in both margin (~24.5k vs a typical 15–18k) and median margin % (~17.5% vs a ~13.5–14% baseline) — worth investigating as an isolated event rather than a trend, since 2023 returned to normal levels.
+- Median margin % has drifted modestly upward in 2024–2025 (~14.5–15.5%) compared to 2021–2023 (~13.5%), suggesting a slight efficiency improvement despite flat revenue.
