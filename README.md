@@ -45,25 +45,25 @@ Project Structure
 └── README.md
 ```
 
-📂 01_db_exploring/
+📂 01db_exploring/
 
 Explored the source database schema behind the company's 1C Enterprise system to identify the relevant tables, keys, and relationships needed for the analysis.
 
 02 — Data Extraction & Loading
 
-📂 02_data_load/
+📂 02data_load/
 
 Extracted the relevant data via SQL and saved it locally in Parquet format for efficient, reproducible downstream processing.
 
 03 — Data Reading & Pre-Aggregation
 
-📂 03_data_read/
+📂 03data_read/
 
 Read the Parquet files, performed initial aggregation, and saved the resulting dataset locally for the analysis stage.
 
-04 — Exploratory Data Analysis
+# 04 — Exploratory Data Analysis
 
-📂 04_eda/ · eda01_intro
+📂 04eda/ · eda01_intro
 
 Checked for duplicate records and missing values
 Anonymized sensitive fields (manager and client identifiers — see Data & Anonymization)
