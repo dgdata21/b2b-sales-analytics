@@ -11,18 +11,13 @@ pd.set_option("display.width", 1000)
 DISTRIBUTION_COLS = ["revenue", "margin"]
 ROW_Z_SCORE_THRESHOLD = 3
 
-# пороги для помесячной агрегированной статистики (меньше строк -> мягче порог для Z-score)
 MONTHLY_Z_SCORE_THRESHOLD = 2
 MONTHLY_ROBUST_Z_THRESHOLD = 3
 
-# 0.6745 (или scale='normal' в scipy) масштабирует MAD, чтобы робастный
-# Z-score был сопоставим со стандартным на нормальном распределении
 ROBUST_Z_SCALE = 0.6745
 
 
 def add_z_scores(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
-    """Добавляет обычный и робастный (через медиану/MAD) Z-score для cols.
-    Возвращает копию df."""
     df = df.copy()
     for col in cols:
         mean = df[col].mean()
@@ -38,7 +33,6 @@ def add_z_scores(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
 
 
 def calc_robust_z(series: pd.Series) -> pd.Series:
-    """Робастный Z-score через scipy.median_abs_deviation (scale='normal')."""
     median = series.median()
     mad = median_abs_deviation(series, scale="normal")
     if mad == 0:
@@ -51,9 +45,6 @@ def main(
     months_plot: pd.DataFrame | None = None,
     verbose: bool = True,
 ):
-    """Если eda_clean/months_plot не переданы (запуск файла отдельно) —
-    считает их сам через eda02_main(). Если переданы (вызов из оркестратора
-    вроде main.py) — использует их напрямую, без повторного пересчёта."""
     if eda_clean is None or months_plot is None:
         _, eda_clean, months_plot = eda02_main(verbose=False)
 
@@ -110,7 +101,7 @@ def main(
             f"MONTHLY REVENUE ANOMALIES (|Z| > {MONTHLY_Z_SCORE_THRESHOLD})"
         )
         if revenue_anomalies.empty:
-            print("Аномалий по выручке не обнаружено.")
+            print("No revenue anomalies.")
         else:
             print(
                 revenue_anomalies[["period", "revenue", "revenue_z"]]
@@ -123,7 +114,7 @@ def main(
             f"MONTHLY MARGIN ANOMALIES (|Z| > {MONTHLY_Z_SCORE_THRESHOLD})"
         )
         if margin_anomalies.empty:
-            print("Аномалий по марже не обнаружено.")
+            print("No margin anomalies.")
         else:
             print(
                 margin_anomalies[["period", "margin", "margin_z"]]
@@ -151,7 +142,7 @@ def main(
             f"MONTHLY REVENUE ANOMALIES (ROBUST |Z| > {MONTHLY_ROBUST_Z_THRESHOLD})"
         )
         if robust_revenue_anomalies.empty:
-            print("Робастных аномалий по выручке не обнаружено.")
+            print("No robust revenue anomalies.")
         else:
             print(
                 robust_revenue_anomalies[
@@ -166,7 +157,7 @@ def main(
             f"MONTHLY MARGIN ANOMALIES (ROBUST |Z| > {MONTHLY_ROBUST_Z_THRESHOLD})"
         )
         if robust_margin_anomalies.empty:
-            print("Робастных аномалий по марже не обнаружено.")
+            print("No robust margin anomalies.")
         else:
             print(
                 robust_margin_anomalies[
