@@ -8,7 +8,7 @@ from eda01_intro import print_section
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 1000)
 
-PARQUET_PATH = r"D:/path/to/final_eda.parquet"
+PARQUET_PATH = r"D:/code/data_science/data/processed_files/final_eda.parquet"
 
 DISTRIBUTION_COLS = ["revenue", "margin"]
 Z_SCORE_OUTLIER_THRESHOLD = 3
@@ -85,7 +85,7 @@ def main(verbose: bool = True):
     )
 
     if verbose:
-        print_section("GENERAL DATAFRAME EDA", width=140, char="/")
+        print_section("GENERAL DATAFRAME EDA", char="/")
         print_section("DATAFRAME HEAD")
         print(eda_general.head().to_string(index=False))
         print_section("DATAFRAME TAIL")
@@ -132,7 +132,7 @@ def main(verbose: bool = True):
     # VISUALIZATION
     ######################################################
     if verbose:
-        fig, ax = plt.subplots(1, len(DISTRIBUTION_COLS), figsize=(19, 10))
+        fig, ax = plt.subplots(1, len(DISTRIBUTION_COLS), figsize=(13, 8))
         for i, col in enumerate(DISTRIBUTION_COLS):
             sns.histplot(eda_clean[col], kde=True, ax=ax[i], color="#5D6D7E")
             ax[i].set_title(
@@ -143,7 +143,7 @@ def main(verbose: bool = True):
         plt.tight_layout()
         plt.show()
 
-        fig, ax = plt.subplots(3, 1, figsize=(19, 10))
+        fig, ax = plt.subplots(3, 1, figsize=(13, 8))
         sns.barplot(
             data=yoy_plot,
             x="month",
@@ -170,7 +170,7 @@ def main(verbose: bool = True):
         )
         ax[1].get_legend().remove()
         ax[2].get_legend().remove()
-        ax[0].legend(loc="upper left", ncol=3)
+        ax[0].legend(loc="upper left", ncol=5, frameon=False, fontsize=8)
         ax[0].set_xlabel("")
         ax[1].set_xlabel("")
         year_list = " vs ".join(sorted(yoy_plot["year"].astype(str).unique()))
@@ -189,7 +189,7 @@ def main(verbose: bool = True):
         plt.tight_layout()
         plt.show()
 
-        fig, ax = plt.subplots(3, 1, figsize=(19, 10))
+        fig, ax = plt.subplots(3, 1, figsize=(13, 8))
 
         quarter_index = pd.PeriodIndex(months_plot["period"], freq="Q")
         quarterly = (
@@ -230,7 +230,7 @@ def main(verbose: bool = True):
 
         ax[0].set_title("Revenue Dynamic", fontsize=14, pad=15)
         ax[1].set_title("Margin Dynamic", fontsize=14, pad=15)
-        ax[2].set_title("Margin_pct(median)", fontsize=14, pad=15)
+        ax[2].set_title("Margin_pct(median) Dynamic", fontsize=14, pad=15)
 
         plt.tight_layout()
         plt.show()
