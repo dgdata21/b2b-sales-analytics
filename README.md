@@ -35,6 +35,7 @@ No client names, manager names, contact details, or other identifying fields are
 SKU-level detail was deliberately excluded — this analysis focuses on overall revenue and margin dynamics, not product mix.
 
 Project Structure
+```
 ├── 01_db_exploring/   # exploring the source schema, keys, table relationships
 ├── 02_data_load/      # SQL extraction from the source DB, saved as Parquet
 ├── 03_data_read/      # reading Parquet, pre-aggregation, saved locally
@@ -42,6 +43,7 @@ Project Structure
 │   └── eda01_intro     # duplicate/missing-value checks, anonymization of sensitive fields
 ├── results.txt
 └── README.md
+```
 
 📂 01_db_exploring/
 
