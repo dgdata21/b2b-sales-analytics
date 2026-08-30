@@ -81,7 +81,7 @@ def main() -> pd.DataFrame:
 
     negative_revenue_only = df[neg_revenue & ~neg_cost & ~neg_logistic]
 
-    print_section("NEGATIVE REVENUE WITH POSITIVE COSTS (TOP20)")
+    print_section("NEGATIVE REVENUE WITH POSITIVE COSTS (TOP10)")
     print(
         negative_revenue_only[
             ["period", "order_id", "revenue", "cost", "logistic"]
