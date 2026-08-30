@@ -92,11 +92,13 @@ def main(verbose: bool = True):
         print_section("DATAFRAME INFO")
         eda_general.info()
         print()
-        print_section("GENERAL STATISTIC (margin category)", width=210)
-        print(margin_category_stats.to_string(index=False))
+        print_section("GENERAL STATISTIC (margin category)", width=190)
+        print(
+            margin_category_stats.to_string(index=False, float_format="%.3f")
+        )
         print()
-        print_section("MONTHLY STATISTIC (No BONUS)", width=200)
-        print(monthly_no_bonus.to_string(index=False))
+        print_section("MONTHLY STATISTIC (No BONUS)")
+        print(monthly_no_bonus.to_string(index=False, float_format="%.3f"))
         print()
 
     ######################################################
