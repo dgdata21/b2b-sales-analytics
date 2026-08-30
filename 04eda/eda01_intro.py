@@ -42,7 +42,7 @@ def show_extreme_margins(
     print(
         extreme[DIAG_COLS]
         .sort_values("margin_pct")
-        .head(20)
+        .head(10)
         .to_string(index=False)
     )
 
@@ -87,7 +87,7 @@ def main() -> pd.DataFrame:
             ["period", "order_id", "revenue", "cost", "logistic"]
         ]
         .sort_values(by=["revenue"])
-        .head(20)
+        .head(10)
         .to_string(index=False)
     )
 
