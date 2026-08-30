@@ -38,7 +38,7 @@ def show_extreme_margins(
     threshold: float = EXTREME_MARGIN_PCT_THRESHOLD,
 ) -> None:
     extreme = df[df["margin_pct"].abs() > threshold]
-    print_section(f"{label} (MARGIN PERCENT TOP 20)", width=82)
+    print_section(f"{label} (MARGIN PERCENT TOP 10)", width=82)
     print(
         extreme[DIAG_COLS]
         .sort_values("margin_pct")
