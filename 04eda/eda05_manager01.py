@@ -17,7 +17,7 @@ from eda01_intro import print_section
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 1000)
  
-PARQUET_PATH = r"D:/code/data_science/data/processed_files/final_eda.parquet"
+PARQUET_PATH = r"/path/to/final_eda.parquet"
  
 # Test/garbage manager_id values found during EDA — excluded from the
 # final manager-level analysis (see mngr_no_bonus below).
