@@ -39,5 +39,7 @@ if __name__ == "__main__":
     df_clean = eda06_customers02.main(df=df_clean, verbose=True)
     df_clean = eda06_customers03.main(df=df_clean, verbose=True)
 
+    client_df = eda06_customers04.main(verbose=True)
+
     print()
 
