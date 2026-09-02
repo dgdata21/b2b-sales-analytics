@@ -6,6 +6,9 @@ import eda05_manager01
 import eda05_manager02
 import eda05_manager03
 import eda05_manager04
+import eda06_customers01
+import eda06_customers02
+import eda06_customers03
 
 if __name__ == "__main__":
     eda01_intro.main()
@@ -32,4 +35,9 @@ if __name__ == "__main__":
         verbose=True,
     )
 
+    df_clean, customers_df = eda06_customers01.main(verbose=True)
+    df_clean = eda06_customers02.main(df=df_clean, verbose=True)
+    df_clean = eda06_customers03.main(df=df_clean, verbose=True)
+
     print()
+
