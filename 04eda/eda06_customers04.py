@@ -12,7 +12,7 @@ from eda06_customers01 import EXCLUDED_ORDER_IDS
 pd.set_option("display.max_columns", None)
 pd.set_option("display.width", 1000)
 
-PARQUET_PATH = r"D:/code/data_science/data/processed_files/final_eda.parquet"
+PARQUET_PATH = r"/path/to/final_eda.parquet"
 MIN_ORDERS_FOR_RFM = 10
 EXCLUDED_CUSTOMER_IDS = "3804cd0faee4e9d230ac18e7"
 
@@ -22,13 +22,6 @@ def main(verbose: bool = True) -> pd.DataFrame:
     # DATA LOADING & PRE-PROCESSING
     ##########################################################################
     primary_df = pd.read_parquet(PARQUET_PATH)
-
-    # if verbose:
-    #     print_section("PRIMARY DATAFRAME HEAD", width=150)
-    #     print(
-    #         primary_df.head().to_string(index=False, float_format="%.1f")
-    #     )
-    # print()
 
     # Filter out bonus records and corrupted/excluded orders
     filtered_df = primary_df[primary_df["margin_category"] != "BONUS"]
