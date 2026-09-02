@@ -23,11 +23,12 @@ def main(verbose: bool = True) -> pd.DataFrame:
     ##########################################################################
     primary_df = pd.read_parquet(PARQUET_PATH)
 
-    if verbose:
-        print_section("PRIMARY DATAFRAME HEAD", width=150)
-        print(
-            primary_df.head().to_string(index=False, float_format="%.1f"), "\n"
-        )
+    # if verbose:
+    #     print_section("PRIMARY DATAFRAME HEAD", width=150)
+    #     print(
+    #         primary_df.head().to_string(index=False, float_format="%.1f")
+    #     )
+    # print()
 
     # Filter out bonus records and corrupted/excluded orders
     filtered_df = primary_df[primary_df["margin_category"] != "BONUS"]
